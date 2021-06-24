@@ -17,7 +17,7 @@ codeList = '300541.SZ,300624.SZ'
 df = pro.daily(ts_code=codeList, start_date='20180701', end_date='20210611')
 
 # 初始化数据库
-connect_info = 'mysql+pymysql://root:12345@localhost:3306/' \
+connect_info = 'mysql+pymysql://root:12345@localhost:3306/qtdb' \
                ''
 engine = create_engine(connect_info)  # use sqlalchemy to build link-engine
 
