@@ -72,7 +72,7 @@ def write_data(df,engine):
 def get_data():
     currentDate = datetime.datetime.now().strftime('%Y%m%d')
     pro = ts.pro_api()
-    df = pro.query('trade_cal', start_date='20180101', end_date=currentDate)
+    df = pro.query('trade_cal', start_date='20180101', end_date='20211231')
     return df
 
 
