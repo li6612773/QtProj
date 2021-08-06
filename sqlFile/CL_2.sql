@@ -2,7 +2,7 @@
 -- 顺序执行一下以下语句，选出下一日股票-使用龙虎榜TopList 数据更全面
 -- -------------------------------------
 -- 生成龙虎榜里是上涨的股票，并算出吸筹集中度
-drop table cl2_cl_jgmx_tmp ;
+drop table if exists cl2_cl_jgmx_tmp ;
 create table cl2_cl_jgmx_tmp
 SELECT trade_date as xgrq,ts_code,
 	`hq_TopList`.`net_rate`,
@@ -18,11 +18,11 @@ SELECT trade_date as xgrq,ts_code,
     `hq_TopList`.`net_amount`,
     `hq_TopList`.`float_values`,
     `hq_TopList`.`reason`
-FROM `qtdb`.`hq_TopList` where pct_change >0 and net_rate>25 and   trade_date>'2020-08-01'
+FROM `qtdb`.`hq_TopList` where pct_change >0 and net_rate>25 and   trade_date>'2021-01-01'
 ;
 select * from cl2_cl_jgmx_tmp order by xgrq desc
 ;
-drop table cl2_cl_jgmx_tmp_xg
+drop table if exists cl2_cl_jgmx_tmp_xg
 ;
 create table cl2_cl_jgmx_tmp_xg
 select a.*, area, industry, market, list_date,datediff(current_date(),list_date) as IPOnDay
@@ -30,14 +30,14 @@ from cl2_cl_jgmx_tmp a left join  hq_stock_basic b on a.ts_code = b.ts_code    o
 ;
 select * from cl2_cl_jgmx_tmp_xg
 ;
-drop table cl2_cl_jgmx
+drop table if exists cl2_cl_jgmx
 ;
 create table cl2_cl_jgmx
 select * from cl2_cl_jgmx_tmp_xg where IPOnDay>500 and substr(ts_code,1,2) in('00','60')
 ;
 select * from cl2_cl_jgmx
 ;
-drop table cl2_cl_jg
+drop table if exists cl2_cl_jg
 ;
 create table cl2_cl_jg
 select distinct xgrq,ts_code from cl2_cl_jgmx order by xgrq desc,ts_code desc
@@ -54,11 +54,11 @@ SELECT * FROM qtdb.hq_TopInst order by  trade_date desc;
 -- 将选出的证券进行回测,选出T+1和T+2的行情
 -- 先缓存一张两日关联信息表
 
-drop table cl2_hc_T1
+drop table if exists cl2_hc_T1
 ;
-drop table cl2_hc_T2
+drop table if exists cl2_hc_T2
 ;
-drop table cl2_hc_Tn
+drop table if exists cl2_hc_Tn
 ;
 create table cl2_hc_T1
 select xgrq,ts_code,get_workdate(xgrq,1) as trade_date_n from cl2_cl_jg
@@ -67,7 +67,7 @@ create table cl2_hc_T2
 select xgrq,ts_code,get_workdate(xgrq,2) as trade_date_n from cl2_cl_jg
 ;
 create table cl2_hc_Tn
-select xgrq,ts_code, Case When get_workdate(xgrq,80)<'2021-08-04' Then get_workdate(xgrq,80) Else '2021-08-04' End as trade_date_n from cl2_cl_jg
+select xgrq,ts_code, Case When get_workdate(xgrq,600)<'2021-08-06' Then get_workdate(xgrq,600) Else '2021-08-06' End as trade_date_n from cl2_cl_jg
 ;
 select * from cl2_hc_T1 order by xgrq desc
 ;
@@ -76,14 +76,14 @@ select * from cl2_hc_T2 order by xgrq desc
 select * from cl2_hc_Tn order by xgrq desc
 ;
 -- 取T0、T1、T2行情，有个问题，下一个自然日不一定是工作日，所以会少选一些出来
-drop table cl2_hc_jg_tn
+drop table if exists cl2_hc_jg_tn
 ;
 create table cl2_hc_jg_tn
 select a.* ,b.xgrq as trade_date_n,b.xgrq,b.ts_code as xg_ts_code, 'T0' as tn from
  cl2_cl_jg b
 left join
  (select * FROM hq_daily
-where trade_date > '2020-08-01') a
+where trade_date > '2021-01-01') a
 on  a.ts_code = b.ts_code and a.trade_date = b.xgrq
 ;
 insert into cl2_hc_jg_tn
@@ -91,7 +91,7 @@ select a.* ,b.trade_date_n,b.xgrq,b.ts_code as xg_ts_code, 'T1' as tn from
 cl2_hc_T1 b
 left join
  (select * FROM hq_daily
-where trade_date > '2020-08-01') a
+where trade_date > '2021-01-01') a
 on  a.ts_code = b.ts_code and a.trade_date = b.trade_date_n
 ;
 insert into cl2_hc_jg_tn
@@ -99,7 +99,7 @@ select a.* ,b.trade_date_n,b.xgrq,b.ts_code as xg_ts_code, 'T2' as tn from
 cl2_hc_T2 b
 left join
  (select * FROM hq_daily
-where trade_date > '2020-08-01') a
+where trade_date > '2021-01-01') a
 on  a.ts_code = b.ts_code and a.trade_date = b.trade_date_n
 ;
 insert into cl2_hc_jg_tn
@@ -107,13 +107,13 @@ select a.* ,b.trade_date_n,b.xgrq,b.ts_code as xg_ts_code, 'Tn' as tn from
 cl2_hc_Tn b
 left join
  (select * FROM hq_daily
-where trade_date > '2020-08-01') a
+where trade_date > '2021-01-01') a
 on  a.ts_code = b.ts_code and a.trade_date = b.trade_date_n
 ;
 select * from cl2_hc_jg_tn order by xgrq desc
 ;
 -- 将新股标识出来，标出上市多少天了 ，除开了新上市的票，提升不明显，降低也不明显，可以踢掉新发的涨停票，避免第二天买不到
-drop table cl2_hc_jg_tn_xg
+drop table if exists cl2_hc_jg_tn_xg
 ;
 create table cl2_hc_jg_tn_xg
 select a.*,b.name, area, industry, market, list_date,datediff(current_date(),list_date) as IPOnDay
@@ -122,9 +122,9 @@ from cl2_hc_jg_tn a left join  hq_stock_basic b on a.xg_ts_code = b.ts_code    o
 select * from cl2_hc_jg_tn_xg order by xgrq desc
 ;
 -- 组成包含t1 t2 两天的数据结果
-drop table cl2_hc_jg_tn_big01;
-drop table cl2_hc_jg_tn_big012;
-drop table cl2_hc_jg_tn_big012n;
+drop table if exists cl2_hc_jg_tn_big01;
+drop table if exists cl2_hc_jg_tn_big012;
+drop table if exists cl2_hc_jg_tn_big012n;
 create table cl2_hc_jg_tn_big01
 select t0.*,
     t1.`ts_code` as t1_ts_code,
@@ -198,62 +198,68 @@ select t1.*,
 
 select * from cl2_hc_jg_tn_big012n order by xgrq desc ;
 -- 在选股第二天，能够成功以昨收价买入的，且以收盘价卖出后的利润率 （除去一年内的新股，只选深圳主板的票）
-drop table cl2_hc_jg_tn_lrl ;
-create table cl2_hc_jg_tn_lrl
+drop table if exists cl2_hc_jg_tn_lrl_4kind ;
+create table cl2_hc_jg_tn_lrl_4kind
 select *,(Case When t1_low<=t1_open Then t2_close - t1_open Else 0 End)*100/t1_open  as lrl_t1openjMR_t2closejMC,
        (Case When t1_low<=close Then t2_close - close Else 0 End)*100/close  as lrl_t0closejMR_t2closejMC,
        (Case When t1_low<=t1_open Then tn_close - t1_open Else 0 End)*100/t1_open  as lrl_t1openjMR_tnclosejMC,
        (Case When t1_low<=close Then tn_close - close Else 0 End)*100/close  as lrl_t0closejMR_tnclosejMC
 from cl2_hc_jg_tn_big012n   where  name not like '%ST%' order by xgrq desc ;
 
-select count(*) from cl2_hc_jg_tn_lrl where lrl_t1openjMR_tnclosejMC<>0 ;
+select count(*) from cl2_hc_jg_tn_lrl_4kind where lrl_t1openjMR_tnclosejMC<>0 ;
 
-select * from cl2_hc_jg_tn_lrl where lrl_t1openjMR_tnclosejMC<>0 and tn_trade_date <>'2021-08-04';
+select * from cl2_hc_jg_tn_lrl_4kind where lrl_t1openjMR_tnclosejMC<>0 and tn_trade_date <>'2021-08-06';
 
-select * from cl2_hc_jg_tn_lrl where lrl_t1openjMR_tnclosejMC<>0 and tn_trade_date = '2021-08-04';
+select * from cl2_hc_jg_tn_lrl_4kind where lrl_t1openjMR_tnclosejMC<>0 and tn_trade_date = '2021-08-06';
 
-select sum(lrl_t1openjMR_tnclosejMC) as lrl_t1openjMR_tnclosejMC,sum(lrl_t1openjMR_tnclosejMC)/(select count(*) from cl2_hc_jg_tn_lrl where lrl_t1openjMR_tnclosejMC<>0) as 平均每只收益率 ,
-       sum(lrl_t0closejMR_tnclosejMC) as lrl_t0closejMR_tnclosejMC  from cl2_hc_jg_tn_lrl ;
+select sum(lrl_t1openjMR_tnclosejMC) as lrl_t1openjMR_tnclosejMC,sum(lrl_t1openjMR_tnclosejMC)/(select count(*) from cl2_hc_jg_tn_lrl_4kind where lrl_t1openjMR_tnclosejMC<>0) as 平均每只收益率 ,
+       sum(lrl_t0closejMR_tnclosejMC) as lrl_t0closejMR_tnclosejMC  from cl2_hc_jg_tn_lrl_4kind ;
 
-select sum(lrl_t1openjMR_tnclosejMC) as lrl_t1openjMR_tnclosejMC,sum(lrl_t1openjMR_tnclosejMC)/(select count(*) from cl2_hc_jg_tn_lrl where lrl_t1openjMR_tnclosejMC<>0) as 平均每只收益率 ,
-       sum(lrl_t0closejMR_tnclosejMC) as lrl_t0closejMR_tnclosejMC  from cl2_hc_jg_tn_lrl where tn_trade_date <>'2021-08-04';
+select sum(lrl_t1openjMR_tnclosejMC) as lrl_t1openjMR_tnclosejMC,sum(lrl_t1openjMR_tnclosejMC)/(select count(*) from cl2_hc_jg_tn_lrl_4kind where lrl_t1openjMR_tnclosejMC<>0) as 平均每只收益率 ,
+       sum(lrl_t0closejMR_tnclosejMC) as lrl_t0closejMR_tnclosejMC  from cl2_hc_jg_tn_lrl_4kind where tn_trade_date <>'2021-08-06';
 
 #  算出持股期间（xgrq --- curentdate）的最低价（每日行情的最低价）和最高价（每日行情的最高价）
-drop table cl2_hc_jg_tn_lrl_hl
+drop table if exists cl2_hc_jg_tn_lrl_4kind_hl
 ;
-create table cl2_hc_jg_tn_lrl_hl
-select *,(select max(high) from hq_daily where ts_code=a.ts_code and trade_date between get_workdate(a.xgrq,2) and current_date()) as high_price,
-       (select min(low) from hq_daily where ts_code=a.ts_code and trade_date between get_workdate(a.xgrq,2) and current_date()) as low_price from cl2_hc_jg_tn_lrl a
+create table cl2_hc_jg_tn_lrl_4kind_hl
+select *,(select max(high) from hq_daily where ts_code=a.ts_code and trade_date between get_workdate(a.xgrq,2) and current_date()) as highest_price,
+       (select min(low) from hq_daily where ts_code=a.ts_code and trade_date between get_workdate(a.xgrq,2) and current_date()) as lowest_price from cl2_hc_jg_tn_lrl_4kind a
 ;
-(select max(high),min(low) from hq_daily where ts_code='000001.SZ' and trade_date between get_workdate('2020-08-01',1) and current_date())
+select * from cl2_hc_jg_tn_lrl_4kind_hl ;
+-- 把最高价和最低价出现的日期加进去
+drop table if exists cl2_hc_jg_tn_lrl_4kind_highlowWithdate
 ;
-select * from cl2_hc_jg_tn_lrl_hl
+create table cl2_hc_jg_tn_lrl_4kind_highlowWithdate
+select *,(select max(trade_date) from hq_daily where ts_code=a.ts_code and high=a.highest_price and trade_date between get_workdate(a.xgrq,2) and current_date()) as highest_price_date,
+       (select max(trade_date) from hq_daily where ts_code=a.ts_code and low=a.lowest_price and trade_date between get_workdate(a.xgrq,2) and current_date()) as lowest_price_date from cl2_hc_jg_tn_lrl_4kind_hl a
 ;
-drop table cl2_hc_jg_tn_lrl_hl_tmp
+select  * from cl2_hc_jg_tn_lrl_4kind_highlowWithdate
 ;
-create table cl2_hc_jg_tn_lrl_hl_tmp
-select *,xgrq as my_xgrq,tn_trade_date as my_selldate ,ts_code as my_ts_code,(high_price-t1_open)*100/t1_open  as my_high, (low_price-t1_open)*100/t1_open as my_low from cl2_hc_jg_tn_lrl_hl
+drop table if exists cl2_hc_jg_tn_lrl_4kind_hl_tmp
 ;
-select sum(lrl_t1openjMR_t2closejMC) as lrl_t1openjMR_t2closejMC ,sum(lrl_t0closejMR_t2closejMC)  as lrl_t0closejMR_t2closejMC,
-       sum(lrl_t1openjMR_tnclosejMC) as lrl_t1openjMR_tnclosejMC, sum(lrl_t0closejMR_tnclosejMC) as lrl_t0closejMR_tnclosejMC from cl2_hc_jg_tn_lrl_hl_tmp where my_low >-16
+create table cl2_hc_jg_tn_lrl_4kind_hl_tmp
+select ts_code as 股票代码,name as 股票简称,xgrq as 选股日期,t1_trade_date as 买入日期 ,t1_open as 买入价,tn_trade_date as 持有到期日期,tn_close as 到期卖出价,tn_close-t1_open as 持有到期盈利（元）,
+       highest_price as 历史最高价,highest_price_date as 历史最高价出现日期,lowest_price as 历史最低价,lowest_price_date as 历史最低价出现日期 ,
+       (highest_price-t1_open)*100/t1_open  as 最高价涨幅, (lowest_price-t1_open)*100/t1_open as 最低价涨幅 ,a.*
+from cl2_hc_jg_tn_lrl_4kind_highlowWithdate a
 ;
-select * from cl2_hc_jg_tn_lrl_hl_tmp ;
+select * from cl2_hc_jg_tn_lrl_4kind_hl_tmp ;
 --  止损-n后的收益
-select sum(lrl_t1openjMR_tnclosejMC) +  (select count(*)*-20 from cl2_hc_jg_tn_lrl_hl_tmp where my_low <-20) as fh from cl2_hc_jg_tn_lrl_hl_tmp where my_low >=-20
+select sum(lrl_t1openjMR_tnclosejMC) +  (select count(*)*-20 from cl2_hc_jg_tn_lrl_4kind_hl_tmp where 最低价涨幅 <-20) as fh from cl2_hc_jg_tn_lrl_4kind_hl_tmp where 最低价涨幅 >=-20
 ;
---  止赢n后的收益
-select sum(Case When my_high>=40 Then 40 Else lrl_t1openjMR_tnclosejMC End)  as 止盈后总收益 from cl2_hc_jg_tn_lrl_hl_tmp
+--  止赢n后的收益(明细）
+select (Case When 最高价涨幅>=40 Then 40 Else lrl_t1openjMR_tnclosejMC End)  as 止盈后收益率,(Case When 最高价涨幅>=40 Then t1_open*0.4 Else tn_close-t1_open End) as 止盈后收益（元）,a.* from cl2_hc_jg_tn_lrl_4kind_hl_tmp a
 ;
-select sum(Case When my_high>=40 Then 40 Else lrl_t1openjMR_tnclosejMC End) as lrl_t1openjMR_tnclosejMC,
-       sum(Case When my_high>=40 Then 40 Else lrl_t1openjMR_tnclosejMC End)/(select count(*) from cl2_hc_jg_tn_lrl where lrl_t1openjMR_tnclosejMC<>0) as 平均每只收益率
-       from cl2_hc_jg_tn_lrl_hl_tmp ;
+-- 止赢n后的收益（总收益，平均每只收益）
+select sum(Case When 最高价涨幅>=40 Then 40 Else lrl_t1openjMR_tnclosejMC End) as 总收益,
+       sum(Case When 最高价涨幅>=40 Then 40 Else lrl_t1openjMR_tnclosejMC End)/(select count(*) from cl2_hc_jg_tn_lrl_4kind where lrl_t1openjMR_tnclosejMC<>0) as 平均每只收益率
+       from cl2_hc_jg_tn_lrl_4kind_hl_tmp ;
 
 
-select lrl_t1openjMR_tnclosejMC,my_high,(Case When my_high>=100 Then 100 Else lrl_t1openjMR_tnclosejMC End) as 止盈后收益 from cl2_hc_jg_tn_lrl_hl_tmp where lrl_t1openjMR_tnclosejMC<my_high ;
+select lrl_t1openjMR_tnclosejMC,最高价涨幅,最低价涨幅,(Case When 最高价涨幅>=40 Then 40 Else lrl_t1openjMR_tnclosejMC End) as 止盈后收益,a.*
+from cl2_hc_jg_tn_lrl_4kind_hl_tmp a ;
 
-select Case When t1_low<=close Then t2_close - close Else 0 End from cl2_hc_jg_tn_lrl_hl_tmp where lrl_t1openjMR_tnclosejMC<my_high
+select Case When t1_low<=close Then t2_close - close Else 0 End from cl2_hc_jg_tn_lrl_4kind_hl_tmp where lrl_t1openjMR_tnclosejMC<最高价涨幅
 ;
-
-
 
 
