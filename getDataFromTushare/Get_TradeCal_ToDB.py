@@ -72,12 +72,12 @@ def write_data(df,engine):
 def get_data():
     currentDate = datetime.datetime.now().strftime('%Y%m%d')
     pro = ts.pro_api()
-    df = pro.query('trade_cal', start_date='20180101', end_date='20211231')
+    df = pro.query('trade_cal', start_date='20050101', end_date='20211231')
     return df
 
 
 def droptable():
-    engine.execute('drop table hq_trade_cal')
+    engine.execute('drop table if exists  hq_trade_cal')
 
 if __name__ == '__main__':
     # df = read_data()
