@@ -86,3 +86,4 @@ if __name__ == '__main__':
     df = get_data()
     write_data(df, engine)
     print(df)
+    end_str = input("交易日历更新完毕，请复核是否正确执行！")

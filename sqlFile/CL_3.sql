@@ -299,3 +299,5 @@ select Case When t1_low<=close Then t2_close - close Else 0 End from cl2_hc_jg_t
 ;
 
 
+
+

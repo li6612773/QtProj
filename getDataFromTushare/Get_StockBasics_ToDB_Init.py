@@ -41,12 +41,10 @@ def write_data(df,engine):
                            'list_date': DATE})
     print(res)
 
-
 def get_data():
     pro = ts.pro_api()
     df = pro.stock_basic()
     return df
-
 
 def droptable():
     engine.execute('drop table hq_stock_basic')
@@ -58,4 +56,4 @@ if __name__ == '__main__':
     df = get_data()
     write_data(df, engine)
     print(df)
-    end_str = input("基础证券信息加载完毕，请复核是否正确执行！")
+    end_str = input("请符合是否正确执行！")

@@ -107,3 +107,4 @@ if __name__ == '__main__':
     df = get_data_and_toDB(codeList, engine)  # 读取行情数据，并存储到数据库
     print(codeList)
     # print(df)
+    end_str = input("当日日线行情加载完毕，请复核是否正确执行！")

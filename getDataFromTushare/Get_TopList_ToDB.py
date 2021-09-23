@@ -111,3 +111,4 @@ if __name__ == '__main__':
     # droptable()
     df = get_and_write_data(engine)
     print(df)
+    end_str = input("龙虎榜股票信息加载完毕，请复核是否正确执行！")

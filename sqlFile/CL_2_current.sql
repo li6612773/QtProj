@@ -4,7 +4,7 @@
 # -- 准备索引
 drop index  hq_daily_trade_date_ts_code_index on hq_daily ;
 create index hq_daily_trade_date_ts_code_index
-    on hq_daily (trade_date, ts_code);
+    on hq_daily (ts_code,trade_date);
 
 # drop index  hq_daily_trade_date_high_ts_code_index onhq_daily;
 # create index hq_daily_trade_date_high_ts_code_index
@@ -37,7 +37,7 @@ SELECT trade_date as xgrq,ts_code,
        `hq_TopList`.`net_amount`,
        `hq_TopList`.`float_values`,
        `hq_TopList`.`reason`
-FROM `qtdb`.`hq_TopList` where pct_change >0 and net_rate>25 and   trade_date between '2021-05-01' and  current_date()
+FROM `qtdb`.`hq_TopList` where pct_change >0 and net_rate>25 and   trade_date between '2020-05-01' and  current_date()
 ;
 select * from cl2_current_cl_jgmx_tmp order by xgrq desc
 ;
@@ -47,14 +47,14 @@ create table cl2_current_cl_jgmx_tmp_xg
 select a.*, area, industry, market, list_date,datediff(xgrq,list_date) as IPOnDay
 from cl2_current_cl_jgmx_tmp a left join  hq_stock_basic b on a.ts_code = b.ts_code    order by a.xgrq desc
 ;
-# select * from cl2_current_cl_jgmx_tmp_xg
+select * from cl2_current_cl_jgmx_tmp_xg  order by xgrq desc
 ;
 drop table if exists cl2_current_cl_jgmx
 ;
 create table cl2_current_cl_jgmx
-select * from cl2_current_cl_jgmx_tmp_xg -- where IPOnDay>500 and substr(ts_code,1,2) in('00','60')
+select * from cl2_current_cl_jgmx_tmp_xg where IPOnDay > 500 and substr(ts_code,1,2) in('00','60')
 ;
-# select * from cl2_current_cl_jgmx
+select * from cl2_current_cl_jgmx
 ;
 drop table if exists cl2_current_cl_jg
 ;
@@ -84,7 +84,7 @@ create table cl2_current_hc_T2
 select xgrq,ts_code,get_workdate(xgrq,2) as trade_date_n from cl2_current_cl_jg
 ;
 create table cl2_current_hc_Tn
-select xgrq,ts_code, Case When get_workdate(xgrq,10)>current_date() Then  current_date()  Else get_workdate(xgrq,10) End  as trade_date_n from cl2_current_cl_jg
+select xgrq,ts_code, Case When get_workdate(xgrq,80)>current_date() Then  current_date()  Else get_workdate(xgrq,80) End  as trade_date_n from cl2_current_cl_jg
 ;
 select * from cl2_current_hc_T1 order by xgrq desc
 ;
@@ -100,7 +100,7 @@ select a.* ,b.xgrq as trade_date_n,b.xgrq,b.ts_code as xg_ts_code, 'T0' as tn fr
     cl2_current_cl_jg b
         left join
     (select * FROM hq_daily
-     where trade_date > '2021-05-01') a
+     where trade_date > '2020-05-01') a
     on  a.ts_code = b.ts_code and a.trade_date = b.xgrq
 ;
 insert into cl2_current_hc_jg_tn
@@ -108,7 +108,7 @@ select a.* ,b.trade_date_n,b.xgrq,b.ts_code as xg_ts_code, 'T1' as tn from
     cl2_current_hc_T1 b
         left join
     (select * FROM hq_daily
-     where trade_date > '2021-05-01') a
+     where trade_date > '2020-05-01') a
     on  a.ts_code = b.ts_code and a.trade_date = b.trade_date_n
 ;
 insert into cl2_current_hc_jg_tn
@@ -116,7 +116,7 @@ select a.* ,b.trade_date_n,b.xgrq,b.ts_code as xg_ts_code, 'T2' as tn from
     cl2_current_hc_T2 b
         left join
     (select * FROM hq_daily
-     where trade_date > '2021-05-01') a
+     where trade_date > '2020-05-01') a
     on  a.ts_code = b.ts_code and a.trade_date = b.trade_date_n
 ;
 insert into cl2_current_hc_jg_tn
@@ -124,7 +124,7 @@ select a.* ,b.trade_date_n,b.xgrq,b.ts_code as xg_ts_code, 'Tn' as tn from
     cl2_current_hc_Tn b
         left join
     (select * FROM hq_daily
-     where trade_date > '2021-05-01') a
+     where trade_date > '2020-05-01') a
     on  a.ts_code = b.ts_code and a.trade_date = b.trade_date_n
 ;
 select * from cl2_current_hc_jg_tn order by xgrq desc
@@ -227,6 +227,7 @@ select *,(Case When t1_low<=t1_open Then t2_close - t1_open Else 0 End)*100/t1_o
        (Case When t1_low<=close Then tn_close - close Else 0 End)*100/close  as lrl_t0closejMR_tnclosejMC
 from cl2_current_hc_jg_tn_big012n   where  name not like '%ST%' order by xgrq desc ;
 
+select * from cl2_current_hc_jg_tn_lrl_4kind ;
 select COUNT(*) from cl2_current_hc_jg_tn_lrl_4kind where lrl_t1openjMR_tnclosejMC=0 ;
 select count(*) from cl2_current_hc_jg_tn_lrl_4kind where lrl_t1openjMR_tnclosejMC<>0 ;
 
@@ -291,12 +292,18 @@ select b.net_rate as 龙虎榜净买入占比,b.pct_change as 龙虎榜涨幅,b.
 -- 止赢n后的收益（总收益，平均每只收益）
       select sum(止盈后收益率),sum(止盈后收益率)/
              (select count(*) from cl2_current_hc_jg_tn_lrl_4kind_hl_jg where 止盈后收益率<>0) as 平均每只收益率
-from cl2_current_hc_jg_tn_lrl_4kind_hl_jg ;
+from cl2_current_hc_jg_tn_lrl_4kind_hl_jg where !(t1_open=t1_low and t1_low = t1_high) ;
 
--- 最终结果
+
+
+-- 最终结果 包括第二天一字版的，不一定能买得到
 select distinct * from cl2_current_hc_jg_tn_lrl_4kind_hl_jg order by xgrq desc;
 
--- 买得到的最终结果
-select distinct * from cl2_current_hc_jg_tn_lrl_4kind_hl_jg_LHB where t1_open-t1_low>0 order by xgrq desc;
+select distinct * from cl2_current_hc_jg_tn_lrl_4kind_hl_jg_LHB order by xgrq desc;
+-- 买得到的最终结果，过滤t1开盘就一字板的
+select distinct * from cl2_current_hc_jg_tn_lrl_4kind_hl_jg_LHB where !(t1_open=t1_low and t1_low = t1_high) order by xgrq desc;
+
+-- 选股看这条比较准
+select * from cl2_current_hc_jg_tn_lrl_4kind ;
 
 

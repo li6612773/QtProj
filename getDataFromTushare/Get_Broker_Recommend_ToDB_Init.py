@@ -81,9 +81,9 @@ def get_data():
     currentDate = datetime.datetime.now().strftime('%Y%m')
     idate = '200001'
     nextdate = '199912'
-    # nextdateP = datetime.datetime.strptime('2000-01-01','%Y-%m-%d').date()
-    nextdate = currentDate
-    nextdateP = datetime.datetime.now()
+    nextdateP = datetime.datetime.strptime('2000-01-01','%Y-%m-%d').date()
+    # nextdate = currentDate
+    # nextdateP = datetime.datetime.now()
     itimes = 1;
     while nextdate <= currentDate:
         if itimes <= 5:
@@ -110,6 +110,6 @@ def droptable():
 if __name__ == '__main__':
     # df = read_data()
     engine = init()
-    # droptable()
+    droptable()
     get_data()
     end_str = input("请符合是否正确执行！")
