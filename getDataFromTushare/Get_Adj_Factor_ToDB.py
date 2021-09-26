@@ -95,4 +95,4 @@ if __name__ == '__main__':
     df = get_data_and_toDB(codeList, engine)  # 读取行情数据，并存储到数据库
     print(codeList)
     # print(df)
-    end_str = input("每日指标初始化完成，请复核是否正确执行！")
+    end_str = input("当日复权因子加载完成，请复核是否正确执行！")
