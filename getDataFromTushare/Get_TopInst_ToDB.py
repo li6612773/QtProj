@@ -67,7 +67,7 @@ def get_and_write_data(engine):
         if itimes <= 60:
             df = pro.top_inst(trade_date=idate)
 
-            res = df.to_sql('hq_TopInst', engine, index=False, if_exists='append', chunksize=10000,
+            res = df.to_sql('hq_TopInst', engine, index=False, if_exists='append', chunksize=100000,
                             dtype={'trade_date': DATE,
                                    'ts_code': NVARCHAR(20),
                                    'exalter': NVARCHAR(255),

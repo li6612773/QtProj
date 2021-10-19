@@ -114,7 +114,7 @@ def get_data_and_toDB(codeList, engine):
 
 })
             # print(tosqlret)
-            print(math.ceil(i/12), '/', math.ceil(codeList.__len__()/1), codes, ' ', len(df))
+            print(math.ceil(i/12), '/', math.ceil(codeList.__len__()/12), codes, ' ', len(df))
 
             codes = ''
             itimes = itimes + 1
